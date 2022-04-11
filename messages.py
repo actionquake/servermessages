@@ -56,11 +56,11 @@ def get_server_messages():
 
     for msg_file in filenames:
         server_name = msg_file.split('.', 1)
-        msg_list = []
         response = requests.get(GIT_RAW + "/msgs/" + msg_file)
         content = response.content.decode("utf-8")
-        msg_list.append(content)
-        server_messages[server_name[0]] = msg_list
+        print(content)
+        print(type(content))
+        server_messages[server_name[0]] = content
     
 
 #decrypt_rcon("aq2world-west.rcon.gpg")
