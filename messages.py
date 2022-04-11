@@ -5,10 +5,12 @@ import json
 import time
 from tokenize import Name
 import requests
+import gnupg
 
+PUB_GPG="0xA6C60ABC636EF79B"
 GIT_API="https://api.github.com/repos/actionquake/servermessages/git/trees/main?recursive=1"
-GIT_URL="https://github.com/actionquake/servermessages/messages"
-GIT_RAW="https://raw.githubusercontent.com/actionquake/servermessages/main/messages/"
+GIT_URL="https://github.com/actionquake/servermessages/srv"
+GIT_RAW="https://raw.githubusercontent.com/actionquake/servermessages/main"
 
 def get_latest_server_files(filetype):
     if filetype not in ["msg", "rcon"]:
@@ -16,27 +18,31 @@ def get_latest_server_files(filetype):
 
     r = requests.get(GIT_API)
     get_json = json.loads(r.content)
-    get_json_paths = get_json["tree"]
-    #get_json = [{'path': '.gitignore', 'mode': '100644', 'type': 'blob', 'sha': '94a2dd146a22340832c88013e9fe92663bb9f2cc', 'size': 6, 'url': 'https://api.github.com/repos/actionquake/servermessages/git/blobs/94a2dd146a22340832c88013e9fe92663bb9f2cc'}, {'path': 'Dockerfile', 'mode': '100644', 'type': 'blob', 'sha': '6eedf16cfc0b49e7a90e504a833355d947b8555c', 'size': 91, 'url': 'https://api.github.com/repos/actionquake/servermessages/git/blobs/6eedf16cfc0b49e7a90e504a833355d947b8555c'}, {'path': 'README.md', 'mode': '100644', 'type': 'blob', 'sha': 'aa1c1a21e93dc21cced77f706d1df459837fd3ac', 'size': 68, 'url': 'https://api.github.com/repos/actionquake/servermessages/git/blobs/aa1c1a21e93dc21cced77f706d1df459837fd3ac'}, {'path': 'messages.py', 'mode': '100644', 'type': 'blob', 'sha': 'd7e7c218faad84cd263dc412ee2b445ff70b91c9', 'size': 2228, 'url': 'https://api.github.com/repos/actionquake/servermessages/git/blobs/d7e7c218faad84cd263dc412ee2b445ff70b91c9'}, {'path': 'messages', 'mode': '040000', 'type': 'tree', 'sha': '03bd09f6a408ed6448b91461d5e86a4b6da24137', 'url': 'https://api.github.com/repos/actionquake/servermessages/git/trees/03bd09f6a408ed6448b91461d5e86a4b6da24137'}, {'path': 'messages/aq2world-east', 'mode': '100644', 'type': 'blob', 'sha': '75a08c5ae1376682abf8692a70d8f41847e59ff9', 'size': 85, 'url': 'https://api.github.com/repos/actionquake/servermessages/git/blobs/75a08c5ae1376682abf8692a70d8f41847e59ff9'}, {'path': 'messages/aq2world-west', 'mode': '100644', 'type': 'blob', 'sha': 'cff0c1451e9b9989285bf8fa6642c47adec82ede', 'size': 85, 'url': 'https://api.github.com/repos/actionquake/servermessages/git/blobs/cff0c1451e9b9989285bf8fa6642c47adec82ede'}]
-    
+    get_json_paths = get_json["tree"]    
     file_list = []
     
     for filepath in get_json_paths:
         if (filepath["path"]).endswith(filetype):
             file_list.append(filepath["path"])
-
     return file_list
 
 
+def decrypt_rcon(rcon_file):
+    gpg = gnupg.GPG()
 
-def get_latest_messages():
-    
-    r = requests.get(GIT_URL, allow_redirects=True)
-    open('facebook.ico', 'wb').write(r.content)
+    with open('aq2rcon.asc') as kfile:
+        key = kfile.read()
+        gpg.import_keys(key)
+
+    response = requests.get(GIT_RAW + "/" + rcon_file)
+    encrypted_file = response.read()
+    rcon_password = gpg.decrypt(encrypted_file, passphrase=key)
+    return rcon_password
 
 
+get_latest_server_files("rcon")
 
-get_latest_server_files("asd")
+decrypt_rcon()
 
 # server_groups = []
 # server_ports = {}
