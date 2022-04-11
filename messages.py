@@ -5,7 +5,8 @@ import json
 import time
 from tokenize import Name
 import requests
-import gnupg
+import gnupg 
+gpg = gnupg.GPG()
 
 PUB_GPG="0xA6C60ABC636EF79B"
 GIT_API="https://api.github.com/repos/actionquake/servermessages/git/trees/main?recursive=1"
@@ -28,21 +29,21 @@ def get_latest_server_files(filetype):
 
 
 def decrypt_rcon(rcon_file):
-    gpg = gnupg.GPG()
-
     with open('aq2rcon.asc') as kfile:
         key = kfile.read()
         gpg.import_keys(key)
 
-    response = requests.get(GIT_RAW + "/" + rcon_file)
-    encrypted_file = response.read()
-    rcon_password = gpg.decrypt(encrypted_file, passphrase=key)
+    rcon_file_path = GIT_RAW + "/srv/" + rcon_file
+    response = requests.get(rcon_file_path)
+    encrypted_file = response.content
+    rcon_password = gpg.decrypt(encrypted_file)
+    print(rcon_password)
     return rcon_password
 
 
-get_latest_server_files("rcon")
+#get_latest_server_files("rcon")
 
-decrypt_rcon()
+decrypt_rcon("aq2world-east.rcon.gpg")
 
 # server_groups = []
 # server_ports = {}
