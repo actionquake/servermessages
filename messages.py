@@ -6,7 +6,8 @@ import time
 from tokenize import Name
 import requests
 import gnupg 
-gpg = gnupg.GPG()
+import io
+gpg = gnupg.GPG(gnupghome="/Users/dino/.gnupg")
 
 PUB_GPG="0xA6C60ABC636EF79B"
 GIT_API="https://api.github.com/repos/actionquake/servermessages/git/trees/main?recursive=1"
@@ -27,7 +28,6 @@ def get_latest_server_files(filetype):
             file_list.append(filepath["path"])
     return file_list
 
-
 def decrypt_rcon(rcon_file):
     with open('aq2rcon.asc') as kfile:
         key = kfile.read()
@@ -35,15 +35,39 @@ def decrypt_rcon(rcon_file):
 
     rcon_file_path = GIT_RAW + "/srv/" + rcon_file
     response = requests.get(rcon_file_path)
+    if response.status_code != 200:
+        raise ValueError("rcon file not found: " + rcon_file)
     encrypted_file = response.content
-    rcon_password = gpg.decrypt(encrypted_file)
-    print(rcon_password)
+    decrypt_file = gpg.decrypt(encrypted_file)
+
+    decrypted_bytes = decrypt_file.data
+    rcon_password = decrypted_bytes.decode("utf-8")
     return rcon_password
 
 
-#get_latest_server_files("rcon")
+server_messages = {}
+def get_server_messages():
+    msgfiles = get_latest_server_files("msg")
 
-decrypt_rcon("aq2world-east.rcon.gpg")
+    filenames = []
+    for file in msgfiles:
+        filepath = file.split('/', 1)
+        filenames.append(filepath[1])
+
+    for msg_file in filenames:
+        server_name = msg_file.split('.', 1)
+        msg_list = []
+        response = requests.get(GIT_RAW + "/msgs/" + msg_file)
+        content = response.content.decode("utf-8")
+        msg_list.append(content)
+        server_messages[server_name[0]] = msg_list
+    
+
+#decrypt_rcon("aq2world-west.rcon.gpg")
+get_server_messages()
+
+print(server_messages)
+
 
 # server_groups = []
 # server_ports = {}
