@@ -58,15 +58,17 @@ def get_server_messages():
         server_name = msg_file.split('.', 1)
         response = requests.get(GIT_RAW + "/msgs/" + msg_file)
         content = response.content.decode("utf-8")
-        print(content)
         print(type(content))
-        server_messages[server_name[0]] = content
+        server_messages[server_name[0]] = json.loads(content)
     
+    # lzt = ["Welcome to an AQ2World East server!", "Join us in Discord at https://discord.gg/aq2world"]
+    # print(type(lzt))
+    # print(lzt)
 
 #decrypt_rcon("aq2world-west.rcon.gpg")
 get_server_messages()
 
-print(server_messages)
+print(server_messages["aq2world-east"])
 
 
 # server_groups = []
